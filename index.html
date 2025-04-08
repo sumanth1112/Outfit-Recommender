@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>👕 Outfit Recommender</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d0d0d;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 30px;
+      background: #1e1e1e;
+      border-radius: 15px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    .chatbox {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      text-align: left;
+      margin-bottom: 20px;
+    }
+
+    .message {
+      background: #333;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 8px 0;
+    }
+
+    input, button {
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+
+    input {
+      background: #444;
+      color: white;
+    }
+
+    button {
+      background: #1abc9c;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #16a085;
+    }
+
+    footer {
+      font-size: 12px;
+      color: #888;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>👕 Outfit Recommender</h1>
+    <div class="chatbox" id="chatbox">
+      <div class="message">Outfit Bot: Tell me the current weather or location, and I’ll suggest an outfit!</div>
+    </div>
+    <input type="text" id="weatherInput" placeholder="e.g., It's sunny in Delhi">
+    <button onclick="handleUserInput()">Get Outfit Suggestion</button>
+  </div>
+  <footer>created by you ✨</footer>
+
+  <script>
+    const cohereApiKey = "8GXjETX5RYxpUqcxtwufCxVtUNThwEUdCuDziLhf";
+
+    async function getCohereResponse(prompt) {
+      const response = await fetch("https://api.cohere.ai/v1/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${cohereApiKey}`
+        },
+        body: JSON.stringify({
+          model: "command",  // You can try "command-nightly" if needed
+          prompt: `Based on this weather, suggest an appropriate outfit:\n${prompt}`,
+          max_tokens: 100,
+          temperature: 0.7
+        })
+      });
+
+      const data = await response.json();
+      return data.generations?.[0]?.text.trim() || "Sorry, I couldn't generate an outfit idea.";
+    }
+
+    async function handleUserInput() {
+      const input = document.getElementById("weatherInput").value.trim();
+      const chatbox = document.getElementById("chatbox");
+
+      if (!input) {
+        chatbox.innerHTML += `<div class='message'>Outfit Bot: Please enter the weather or location.</div>`;
+        return;
+      }
+
+      chatbox.innerHTML += `<div class='message'>User: ${input}</div>`;
+      chatbox.innerHTML += `<div class='message'>Outfit Bot: Thinking...</div>`;
+
+      const aiReply = await getCohereResponse(input);
+      chatbox.innerHTML += `<div class='message'>Outfit Bot: ${aiReply}</div>`;
+
+      document.getElementById("weatherInput").value = "";
+    }
+  </script>
+</body>
+</html>
