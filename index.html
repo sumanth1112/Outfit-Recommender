@@ -1,128 +1,884 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>👕 Outfit Recommender</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #0d0d0d;
-      color: white;
-      text-align: center;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StyleAI - Weather Outfit Recommender</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    .container {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 30px;
-      background: #1e1e1e;
-      border-radius: 15px;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
-    }
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-tertiary: #252542;
+            --accent-primary: #6366f1;
+            --accent-secondary: #8b5cf6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
 
-    .chatbox {
-      background: #2a2a2a;
-      padding: 15px;
-      border-radius: 10px;
-      max-height: 300px;
-      overflow-y: auto;
-      text-align: left;
-      margin-bottom: 20px;
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
 
-    .message {
-      background: #333;
-      padding: 12px;
-      border-radius: 8px;
-      margin: 8px 0;
-    }
+        .app-container {
+            max-width: 900px;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            box-shadow: 0 25px 50px -12px var(--shadow);
+        }
 
-    input, button {
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      width: 100%;
-      margin: 10px 0;
-      font-size: 16px;
-    }
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            padding: 1.5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
 
-    input {
-      background: #444;
-      color: white;
-    }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.3;
+        }
 
-    button {
-      background: #1abc9c;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
 
-    button:hover {
-      background: #16a085;
-    }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
 
-    footer {
-      font-size: 12px;
-      color: #888;
-      margin-top: 30px;
-    }
-  </style>
+        .logo i {
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            scroll-behavior: smooth;
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 3px;
+        }
+
+        /* Message Bubbles */
+        .message {
+            max-width: 85%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+        }
+
+        .message.bot {
+            align-self: flex-start;
+        }
+
+        .message-content {
+            padding: 1rem 1.25rem;
+            border-radius: 1.25rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            box-shadow: 0 4px 6px -1px var(--shadow);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .message.bot .message-content {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-bottom-left-radius: 0.25rem;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            padding: 0 0.5rem;
+        }
+
+        .message.user .message-time {
+            text-align: right;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            background: var(--bg-tertiary);
+            padding: 1rem 1.5rem;
+            border-radius: 1.25rem;
+            border-bottom-left-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+            gap: 0.4rem;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* Outfit Card */
+        .outfit-card {
+            background: linear-gradient(135deg, var(--bg-tertiary), rgba(99, 102, 241, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .weather-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .weather-emoji {
+            font-size: 2.5rem;
+        }
+
+        .weather-info h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .weather-info p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .outfit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .outfit-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .outfit-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .outfit-item img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .outfit-item i {
+            font-size: 2.5rem;
+            color: var(--accent-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .outfit-item-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .recommendation-text {
+            background: rgba(99, 102, 241, 0.1);
+            border-left: 3px solid var(--accent-primary);
+            padding: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .chip {
+            background: rgba(99, 102, 241, 0.2);
+            border: 1px solid var(--accent-primary);
+            color: var(--accent-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chip:hover {
+            background: var(--accent-primary);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* Input Area */
+        .input-container {
+            background: var(--bg-tertiary);
+            padding: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 1rem;
+            max-width: 100%;
+            background: var(--bg-primary);
+            padding: 0.5rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .message-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .message-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn i {
+            font-size: 1.25rem;
+        }
+
+        /* Quick Suggestions */
+        .quick-suggestions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .quick-suggestions::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .quick-suggestions::-webkit-scrollbar-thumb {
+            background: var(--accent-primary);
+            border-radius: 2px;
+        }
+
+        .suggestion-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .suggestion-btn:hover {
+            background: rgba(99, 102, 241, 0.2);
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+
+        /* Welcome Message */
+        .welcome-message {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .welcome-message i {
+            font-size: 4rem;
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+
+        .welcome-message h2 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .example-queries {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .example-query {
+            background: rgba(99, 102, 241, 0.1);
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            border: 1px dashed var(--accent-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .app-container {
+                height: 100vh;
+                max-width: 100%;
+            }
+
+            .chat-container {
+                padding: 1rem;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .outfit-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header {
+                padding: 1rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Loading animation for images */
+        .image-loading {
+            background: linear-gradient(90deg, var(--bg-tertiary) 25%, rgba(99, 102, 241, 0.1) 50%, var(--bg-tertiary) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>👕 Outfit Recommender</h1>
-    <div class="chatbox" id="chatbox">
-      <div class="message">Outfit Bot: Tell me the current weather or location, and I’ll suggest an outfit!</div>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-tshirt"></i>
+                    <span>StyleAI</span>
+                </div>
+                <div class="subtitle">Your Personal Weather Outfit Assistant</div>
+            </div>
+        </header>
+
+        <!-- Chat Container -->
+        <div class="chat-container" id="chatContainer">
+            <div class="welcome-message" id="welcomeMessage">
+                <i class="fas fa-cloud-sun"></i>
+                <h2>Welcome to StyleAI!</h2>
+                <p> Tell me the weather and location, and I'll suggest the perfect outfit.</p>
+                
+                <div class="example-queries">
+                    <div class="example-query">☀️ "Sunny in Delhi"</div>
+                    <div class="example-query">❄️ "Cold in Punjab"</div>
+                    <div class="example-query">🌧️ "Rainy in Mumbai"</div>
+                    <div class="example-query">💨 "Windy in Bangalore"</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-container">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    class="message-input" 
+                    id="messageInput" 
+                    placeholder="Try 'Sunny in Delhi' or 'Cold in Punjab'..."
+                    autocomplete="off"
+                >
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            
+            <div class="quick-suggestions">
+                <button class="suggestion-btn" onclick="setInput('Sunny in Delhi')">☀️ Delhi</button>
+                <button class="suggestion-btn" onclick="setInput('Cold in Punjab')">❄️ Punjab</button>
+                <button class="suggestion-btn" onclick="setInput('Rainy in Mumbai')">🌧️ Mumbai</button>
+                <button class="suggestion-btn" onclick="setInput('Dusty in Agra')">🌪️ Agra</button>
+                <button class="suggestion-btn" onclick="setInput('Hot in Chennai')">🔥 Chennai</button>
+                <button class="suggestion-btn" onclick="setInput('Windy in Shimla')">💨 Shimla</button>
+            </div>
+        </div>
     </div>
-    <input type="text" id="weatherInput" placeholder="e.g., It's sunny in Delhi">
-    <button onclick="handleUserInput()">Get Outfit Suggestion</button>
-  </div>
-  <footer>created by you ✨</footer>
 
-  <script>
-    const cohereApiKey = "8GXjETX5RYxpUqcxtwufCxVtUNThwEUdCuDziLhf";
+    <script>
+        // Weather and Outfit Database
+        const weatherDatabase = {
+            'delhi': { condition: 'sunny', temp: 'hot', emoji: '☀️' },
+            'punjab': { condition: 'cold', temp: 'cold', emoji: '❄️' },
+            'andhra pradesh': { condition: 'rainy', temp: 'moderate', emoji: '🌧️' },
+            'agra': { condition: 'dusty', temp: 'hot', emoji: '🌪️' },
+            'mumbai': { condition: 'humid', temp: 'hot', emoji: '🌤️' },
+            'shimla': { condition: 'cold', temp: 'cold', emoji: '🏔️' },
+            'chennai': { condition: 'hot', temp: 'hot', emoji: '🔥' },
+            'bangalore': { condition: 'windy', temp: 'moderate', emoji: '💨' },
+            'kolkata': { condition: 'rainy', temp: 'moderate', emoji: '🌧️' },
+            'jaipur': { condition: 'hot', temp: 'hot', emoji: '☀️' },
+            'goa': { condition: 'sunny', temp: 'hot', emoji: '🏖️' },
+            'kerala': { condition: 'rainy', temp: 'moderate', emoji: '🌴' }
+        };
 
-    async function getCohereResponse(prompt) {
-      const response = await fetch("https://api.cohere.ai/v1/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${cohereApiKey}`
-        },
-        body: JSON.stringify({
-          model: "command",  // You can try "command-nightly" if needed
-          prompt: `Based on this weather, suggest an appropriate outfit:\n${prompt}`,
-          max_tokens: 100,
-          temperature: 0.7
-        })
-      });
+        const outfitDatabase = {
+            'sunny': {
+                items: [
+                    { name: 'Cotton T-Shirt', icon: '👕', image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300' },
+                    { name: 'Shorts', icon: '🩳', image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=300' },
+                    { name: 'Sunglasses', icon: '🕶️', image: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=300' },
+                    { name: 'Sneakers', icon: '👟', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300' }
+                ],
+                advice: "It's sunny and bright! Wear light, breathable cotton fabrics to stay cool. Don't forget UV protection with sunglasses and sunscreen.",
+                colors: ['White', 'Pastel', 'Light Blue']
+            },
+            'hot': {
+                items: [
+                    { name: 'Loose Kurta', icon: '👔', image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=300' },
+                    { name: 'Cotton Pants', icon: '👖', image: 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300' },
+                    { name: 'Cap', icon: '🧢', image: 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=300' },
+                    { name: 'Sandals', icon: '🩴', image: 'https://images.unsplash.com/photo-1603487742131-4160ec999306?w=300' }
+                ],
+                advice: "High temperatures ahead! Choose loose-fitting, breathable clothing. Light colors reflect heat. Stay hydrated!",
+                colors: ['White', 'Beige', 'Light Grey']
+            },
+            'cold': {
+                items: [
+                    { name: 'Wool Jacket', icon: '🧥', image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300' },
+                    { name: 'Sweater', icon: '🧶', image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=300' },
+                    { name: 'Jeans', icon: '👖', image: 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=300' },
+                    { name: 'Boots', icon: '🥾', image: 'https://images.unsplash.com/photo-1608256246200-53e635b5b65f?w=300' }
+                ],
+                advice: "Brrr! It's cold out there. Layer up with thermal wear underneath. Wool and fleece are your best friends today.",
+                colors: ['Dark Blue', 'Black', 'Maroon']
+            },
+            'rainy': {
+                items: [
+                    { name: 'Raincoat', icon: '🧥', image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300' },
+                    { name: 'Waterproof Boots', icon: '👢', image: 'https://images.unsplash.com/photo-1543163521-1bf539c55dd2?w=300' },
+                    { name: 'Umbrella', icon: '☂️', image: 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=300' },
+                    { name: 'Quick-dry Pants', icon: '👖', image: 'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?w=300' }
+                ],
+                advice: "Rain alert! Waterproof materials are essential. Avoid denim as it stays wet longer. Carry a compact umbrella.",
+                colors: ['Navy', 'Dark Green', 'Black']
+            },
+            'dusty': {
+                items: [
+                    { name: 'Full Sleeve Shirt', icon: '👔', image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=300' },
+                    { name: 'Face Mask', icon: '😷', image: 'https://images.unsplash.com/photo-1584634731339-252c581abfc5?w=300' },
+                    { name: 'Goggles', icon: '🥽', image: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=300' },
+                    { name: 'Jeans', icon: '👖', image: 'https://images.unsplash.com/photo-1542272454315-4c01d7abdf4a?w=300' }
+                ],
+                advice: "Dusty conditions reported! Cover up to protect your skin and lungs. Eye protection is crucial. Avoid open footwear.",
+                colors: ['Brown', 'Olive', 'Khaki']
+            },
+            'windy': {
+                items: [
+                    { name: 'Hoodie', icon: '👕', image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=300' },
+                    { name: 'Track Pants', icon: '👖', image: 'https://images.unsplash.com/photo-1517438476312-10d79c077509?w=300' },
+                    { name: 'Running Shoes', icon: '👟', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=300' },
+                    { name: 'Windbreaker', icon: '🧥', image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=300' }
+                ],
+                advice: "Strong winds today! Wear fitted clothing that won't flap around. A windbreaker jacket is perfect. Secure your belongings!",
+                colors: ['Grey', 'Blue', 'Red']
+            },
+            'humid': {
+                items: [
+                    { name: 'Linen Shirt', icon: '👔', image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=300' },
+                    { name: 'Shorts', icon: '🩳', image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=300' },
+                    { name: 'Cotton Socks', icon: '🧦', image: 'https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?w=300' },
+                    { name: 'Breathable Shoes', icon: '👟', image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=300' }
+                ],
+                advice: "High humidity makes it feel hotter than it is. Wear moisture-wicking fabrics. Light colors and loose fits are ideal.",
+                colors: ['White', 'Cream', 'Light Pink']
+            }
+        };
 
-      const data = await response.json();
-      return data.generations?.[0]?.text.trim() || "Sorry, I couldn't generate an outfit idea.";
-    }
+        // Chat functionality
+        const chatContainer = document.getElementById('chatContainer');
+        const messageInput = document.getElementById('messageInput');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const welcomeMessage = document.getElementById('welcomeMessage');
 
-    async function handleUserInput() {
-      const input = document.getElementById("weatherInput").value.trim();
-      const chatbox = document.getElementById("chatbox");
+        // Event Listeners
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
 
-      if (!input) {
-        chatbox.innerHTML += `<div class='message'>Outfit Bot: Please enter the weather or location.</div>`;
-        return;
-      }
+        function setInput(text) {
+            messageInput.value = text;
+            messageInput.focus();
+        }
 
-      chatbox.innerHTML += `<div class='message'>User: ${input}</div>`;
-      chatbox.innerHTML += `<div class='message'>Outfit Bot: Thinking...</div>`;
+        function getCurrentTime() {
+            return new Date().toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        }
 
-      const aiReply = await getCohereResponse(input);
-      chatbox.innerHTML += `<div class='message'>Outfit Bot: ${aiReply}</div>`;
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text) return;
 
-      document.getElementById("weatherInput").value = "";
-    }
-  </script>
+            // Hide welcome message on first interaction
+            if (welcomeMessage) {
+                welcomeMessage.style.display = 'none';
+            }
+
+            // Add user message
+            addMessage(text, 'user');
+            messageInput.value = '';
+
+            // Show typing indicator
+            showTyping();
+
+            // Process and respond
+            setTimeout(() => {
+                const response = processMessage(text);
+                hideTyping();
+                addBotResponse(response);
+            }, 1500 + Math.random() * 1000); // Random delay for realism
+        }
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `
+                <div class="message-content">${escapeHtml(text)}</div>
+                <div class="message-time">${getCurrentTime()}</div>
+            `;
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function addBotResponse(response) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            
+            let outfitHtml = '';
+            if (response.type === 'outfit') {
+                outfitHtml = createOutfitCard(response);
+            } else {
+                outfitHtml = `<div class="message-content">${response.text}</div>`;
+            }
+
+            messageDiv.innerHTML = outfitHtml + `<div class="message-time">${getCurrentTime()}</div>`;
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function createOutfitCard(response) {
+            const itemsHtml = response.outfit.items.map(item => `
+                <div class="outfit-item">
+                    <img src="${item.image}" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.fontSize='3rem'">
+                    <div style="display:none">${item.icon}</div>
+                    <div class="outfit-item-name">${item.name}</div>
+                </div>
+            `).join('');
+
+            const suggestionsHtml = response.suggestions.map(s => 
+                `<button class="chip" onclick="setInput('${s}'); sendMessage();">${s}</button>`
+            ).join('');
+
+            return `
+                <div class="message-content">
+                    <div class="outfit-card">
+                        <div class="weather-header">
+                            <div class="weather-emoji">${response.emoji}</div>
+                            <div class="weather-info">
+                                <h3>Weather: ${response.weather}</h3>
+                                <p>📍 ${response.location}</p>
+                            </div>
+                        </div>
+                        
+                        <h4 style="margin-bottom: 1rem; color: var(--accent-primary);">Recommended Outfit:</h4>
+                        <div class="outfit-grid">
+                            ${itemsHtml}
+                        </div>
+                        
+                        <div class="recommendation-text">
+                            <strong>Style Tip:</strong> ${response.outfit.advice}<br><br>
+                            <strong>Recommended Colors:</strong> ${response.outfit.colors.join(', ')}
+                        </div>
+
+                        <div style="margin-top: 1rem;">
+                            <small style="color: var(--text-secondary);">Try another location:</small>
+                            <div class="suggestion-chips">
+                                ${suggestionsHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function processMessage(text) {
+            const lowerText = text.toLowerCase();
+            
+            // Extract weather and location
+            let weather = null;
+            let location = null;
+
+            // Check for weather keywords
+            const weatherKeywords = {
+                'sunny': 'sunny', 'sun': 'sunny', 'hot': 'hot', 'warm': 'hot',
+                'cold': 'cold', 'chilly': 'cold', 'winter': 'cold', 'freezing': 'cold',
+                'rainy': 'rainy', 'rain': 'rainy', 'wet': 'rainy', 'monsoon': 'rainy',
+                'dusty': 'dusty', 'dust': 'dusty', 'storm': 'dusty', 'sand': 'dusty',
+                'windy': 'windy', 'wind': 'windy', 'breeze': 'windy',
+                'humid': 'humid', 'humidity': 'humid', 'muggy': 'humid'
+            };
+
+            // Check for location in database or generic extraction
+            for (const [city, data] of Object.entries(weatherDatabase)) {
+                if (lowerText.includes(city)) {
+                    location = city.charAt(0).toUpperCase() + city.slice(1);
+                    // If weather not specified, use database default
+                    if (!weather) weather = data.condition;
+                    break;
+                }
+            }
+
+            // Extract weather from text
+            for (const [keyword, condition] of Object.entries(weatherKeywords)) {
+                if (lowerText.includes(keyword)) {
+                    weather = condition;
+                    break;
+                }
+            }
+
+            // If location found in database but no weather specified, use database weather
+            if (location && !weather) {
+                const cityKey = location.toLowerCase();
+                if (weatherDatabase[cityKey]) {
+                    weather = weatherDatabase[cityKey].condition;
+                }
+            }
+
+            // Generate suggestions
+            const suggestions = generateSuggestions(location);
+
+            if (weather && outfitDatabase[weather]) {
+                const emoji = getWeatherEmoji(weather);
+                return {
+                    type: 'outfit',
+                    weather: weather.charAt(0).toUpperCase() + weather.slice(1),
+                    location: location || 'Your Location',
+                    emoji: emoji,
+                    outfit: outfitDatabase[weather],
+                    suggestions: suggestions
+                };
+            } else if (location && !weather) {
+                return {
+                    type: 'text',
+                    text: `I found ${location}, but I'm not sure about the weather there. Could you specify if it's sunny, rainy, cold, hot, dusty, or windy?`
+                };
+            } else {
+                return {
+                    type: 'text',
+                    text: "I didn't catch that. Try saying something like 'Sunny in Delhi', 'Cold in Punjab', or 'Rainy in Mumbai'. You can also click the quick suggestions below!"
+                };
+            }
+        }
+
+        function generateSuggestions(currentLocation) {
+            const cities = Object.keys(weatherDatabase).filter(c => c !== currentLocation?.toLowerCase());
+            const weathers = ['Sunny', 'Cold', 'Rainy', 'Hot', 'Dusty', 'Windy'];
+            
+            const suggestions = [];
+            for (let i = 0; i < 3; i++) {
+                const randomCity = cities[Math.floor(Math.random() * cities.length)];
+                const randomWeather = weathers[Math.floor(Math.random() * weathers.length)];
+                suggestions.push(`${randomWeather} in ${randomCity.charAt(0).toUpperCase() + randomCity.slice(1)}`);
+            }
+            return suggestions;
+        }
+
+        function getWeatherEmoji(weather) {
+            const emojis = {
+                'sunny': '☀️', 'hot': '🔥', 'cold': '❄️',
+                'rainy': '🌧️', 'dusty': '🌪️', 'windy': '💨', 'humid': '🌤️'
+            };
+            return emojis[weather] || '🌡️';
+        }
+
+        function showTyping() {
+            typingIndicator.classList.add('active');
+            scrollToBottom();
+        }
+
+        function hideTyping() {
+            typingIndicator.classList.remove('active');
+        }
+
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Auto-focus input on load
+        window.onload = () => {
+            messageInput.focus();
+        };
+    </script>
 </body>
 </html>
